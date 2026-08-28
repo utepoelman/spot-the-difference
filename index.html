@@ -6,15 +6,15 @@
 <title>Spot the Difference Experiment</title>
 <style>
   :root {
-    --bg-color: #ffffff;
-    --text-color: #000000;
+    --bg-colour: #ffffff;
+    --text-colour: #000000;
     --button-bg: #eeeeee;
     --button-border: #999999;
   }
 
   body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background-colour: var(--bg-colour);
+    colour: var(--text-colour);
     font-family: sans-serif;
     margin: 0;
     padding: 20px;
@@ -32,7 +32,7 @@
     max-width: 800px;
     border: 1px solid var(--button-border);
     padding: 20px;
-    background-color: var(--button-bg);
+    background-colour: var(--button-bg);
     box-sizing: border-box;
   }
 
@@ -65,8 +65,8 @@
 
   button {
     cursor: pointer;
-    background-color: var(--text-color);
-    color: var(--bg-color);
+    background-colour: var(--text-colour);
+    colour: var(--bg-colour);
     font-weight: bold;
     border: none;
     padding: 10px 15px;
@@ -124,7 +124,7 @@
     position: absolute;
     border-radius: 50%;
     border: none;
-    background-color: transparent;
+    background-colour: transparent;
     pointer-events: auto;
     cursor: pointer;
     box-sizing: border-box;
@@ -142,7 +142,7 @@
   /* Highlight circle when difference is found */
   .target-circle.found, .target-circle.solution-marker {
     border: 3px solid #00e676;
-    background-color: rgba(0, 230, 118, 0.3);
+    background-colour: rgba(0, 230, 118, 0.3);
     pointer-events: none;
   }
 
@@ -156,7 +156,7 @@
     padding: 8px 12px;
     text-align: center;
   }
-  th { background-color: #ddd; }
+  th { background-colour: #ddd; }
 
   .button-group {
     display: flex;
@@ -174,9 +174,9 @@
   <h2>Spot the Difference Setup</h2>
   <div class="form-row">
     <div class="form-group">
-      <label for="color-mode">Display Mode:</label>
-      <select id="color-mode">
-        <option value="color">Full Colour</option>
+      <label for="colour-mode">Display Mode:</label>
+      <select id="colour-mode">
+        <option value="colour">Full Colour</option>
         <option value="grayscale">Grayscale</option>
       </select>
     </div>
@@ -242,7 +242,7 @@
 
 <script>
 const IMAGES = {
-  color: {
+  colour: {
     left: 'Nugget_Nature_Colour1.png',
     right: 'Nugget_Nature_Colour2.png'
   },
@@ -261,7 +261,7 @@ const DIFFERENCES = [
 ];
 
 let spaceState = 'SETUP';
-let config = { mode: 'color', showTimer: true };
+let config = { mode: 'colour', showTimer: true };
 let startTime = 0;
 let timerInterval = null;
 let foundDifferences = [];
@@ -295,7 +295,7 @@ window.addEventListener('keydown', (e) => {
 
 function startExperiment() {
   config = {
-    mode: document.getElementById('color-mode').value,
+    mode: document.getElementById('colour-mode').value,
     showTimer: document.getElementById('show-timer').value === 'true'
   };
 
@@ -438,7 +438,7 @@ function buildResultsTable(totalTime) {
           <td style="font-weight: bold;">Timer Displayed</td>
           <td style="font-weight: bold;">${config.showTimer ? 'Yes' : 'No'}</td>
         </tr>
-        <tr style="font-weight: bold; background-color: #eee;">
+        <tr style="font-weight: bold; background-colour: #eee;">
           <td>Total Time (All Found)</td>
           <td>${totalTime.toFixed(2)}s</td>
         </tr>
