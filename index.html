@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spot the Difference Experiment</title>
+<title>Spot the Difference</title>
 <style>
   :root {
     --bg-colour: #ffffff;
@@ -193,7 +193,7 @@
   <p style="margin-top: 20px; font-size: 16px;">
     Press <strong>SPACEBAR</strong> or click <strong>Ready</strong> to reveal the images and start the timer.
   </p>
-  <button id="btn-ready">Ready (Start Experiment)</button>
+  <button id="btn-ready">Ready (Start Game)</button>
 </div>
 
 <!-- GAME STAGE -->
@@ -215,7 +215,7 @@
 
 <!-- RESULTS STAGE -->
 <div id="results-stage" class="hidden">
-  <h2>Experiment Completed</h2>
+  <h2>Game Completed</h2>
   
   <p style="font-size: 18px;">
     Total Completion Time: <strong id="total-time-text">0.00</strong> seconds
@@ -281,7 +281,7 @@ const imgRight = document.getElementById('img-right');
 const imgSolLeft = document.getElementById('img-sol-left');
 const imgSolRight = document.getElementById('img-sol-right');
 
-document.getElementById('btn-ready').addEventListener('click', startExperiment);
+document.getElementById('btn-ready').addEventListener('click', startGame);
 document.getElementById('btn-restart').addEventListener('click', resetToSetup);
 document.getElementById('btn-copy-headers').addEventListener('click', (e) => copyDataToClipboard(true, e.target));
 document.getElementById('btn-copy-data').addEventListener('click', (e) => copyDataToClipboard(false, e.target));
@@ -289,11 +289,11 @@ document.getElementById('btn-copy-data').addEventListener('click', (e) => copyDa
 window.addEventListener('keydown', (e) => {
   if ((e.code === 'Space' || e.key === ' ') && spaceState === 'SETUP') {
     e.preventDefault();
-    startExperiment();
+    startGame();
   }
 });
 
-function startExperiment() {
+function startGame() {
   config = {
     mode: document.getElementById('colour-mode').value,
     showTimer: document.getElementById('show-timer').value === 'true'
@@ -382,7 +382,7 @@ function onTargetClicked(diffId, diffConfig) {
   document.getElementById('found-count').textContent = foundDifferences.length;
 
   if (foundDifferences.length === DIFFERENCES.length) {
-    finishExperiment();
+    finishGame();
   }
 }
 
@@ -394,7 +394,7 @@ function updateTimerUI() {
   timerDisplay.textContent = `${mins}:${secs}.${millis}`;
 }
 
-function finishExperiment() {
+function finishGame() {
   clearInterval(timerInterval);
   spaceState = 'FINISHED';
 
