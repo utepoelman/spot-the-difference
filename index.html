@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spot the Difference Experiment</title>
+<style>
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --button-bg: #eeeeee;
+    --button-border: #999999;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  .hidden { display: none !important; }
+
+  #setup-panel, #results-stage {
+    width: 100%;
+    max-width: 800px;
+    border: 1px solid var(--button-border);
+    padding: 20px;
+    background-color: var(--button-bg);
+    box-sizing: border-box;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .form-group {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+  select, button {
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    border: 1px solid var(--button-border);
+  }
+
+  button {
+    cursor: pointer;
+    background-color: var(--text-color);
+    color: var(--bg-color);
+    font-weight: bold;
+    border: none;
+    padding: 10px 15px;
+  }
+
+  #game-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+  }
+
+  #timer-display {
+    font-size: 28px;
+    font-weight: bold;
+    font-family: monospace;
+    min-height: 36px;
+  }
+
+  .stage-info {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .image-wrapper {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .image-box {
+    position: relative;
+    border: 2px solid var(--button-border);
+    user-select: none;
+    box-sizing: content-box;
+    display: flex;
+  }
+
+  .image-box img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Half-size scaling for solution map images */
+  .solution-wrapper .image-box {
+    max-width: 45%;
+  }
+
+  /* Hotspots using percentage dimensions relative to the image container */
+  .target-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    pointer-events: auto;
+    cursor: pointer;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    width: 20%; /* Active gameplay circle size */
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Scaled proportionally to match the solution image's size */
+  .target-circle.solution-marker {
+    width: 20%; /* Keeps exact 1:1 visual proportion relative to the shrunk image */
+  }
+
+  /* Highlight circle when difference is found */
+  .target-circle.found, .target-circle.solution-marker {
+    border: 3px solid #00e676;
+    background-color: rgba(0, 230, 118, 0.3);
+    pointer-events: none;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid var(--button-border);
+    padding: 8px 12px;
+    text-align: center;
+  }
+  th { background-color: #ddd; }
+
+  .button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP PANEL -->
+<div id="setup-panel">
+  <h2>Spot the Difference Setup</h2>
+  <div class="form-row">
+    <div class="form-group">
+      <label for="color-mode">Display Mode:</label>
+      <select id="color-mode">
+        <option value="color">Full Colour</option>
+        <option value="grayscale">Grayscale</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="show-timer">Show On-Screen Timer:</label>
+      <select id="show-timer">
+        <option value="true">Enabled</option>
+        <option value="false">Disabled (Hidden during trial)</option>
+      </select>
+    </div>
+  </div>
+
+  <p style="margin-top: 20px; font-size: 16px;">
+    Press <strong>SPACEBAR</strong> or click <strong>Ready</strong> to reveal the images and start the timer.
+  </p>
+  <button id="btn-ready">Ready (Start Experiment)</button>
+</div>
+
+<!-- GAME STAGE -->
+<div id="game-stage" class="hidden">
+  <div id="timer-display">00:00.00</div>
+  <div class="stage-info">
+    Differences Found: <span id="found-count">0</span> / 5
+  </div>
+
+  <div class="image-wrapper">
+    <div id="left-box" class="image-box">
+      <img id="img-left" alt="Original Image">
+    </div>
+    <div id="target-box" class="image-box">
+      <img id="img-right" alt="Modified Target Image">
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS STAGE -->
+<div id="results-stage" class="hidden">
+  <h2>Experiment Completed</h2>
+  
+  <p style="font-size: 18px;">
+    Total Completion Time: <strong id="total-time-text">0.00</strong> seconds
+  </p>
+
+  <div id="results-table-container"></div>
+
+  <div class="button-group">
+    <button id="btn-copy-headers">Copy with Headers (TSV)</button>
+    <button id="btn-copy-data">Copy Data Only (TSV)</button>
+    <button id="btn-restart">Next Participant / Retry</button>
+  </div>
+
+  <h3 style="margin-top: 30px;">Solution Map</h3>
+  <div class="image-wrapper solution-wrapper" style="margin-top: 10px;">
+    <div id="sol-left-box" class="image-box">
+      <img id="img-sol-left" alt="Solution Left Image">
+    </div>
+    <div id="sol-right-box" class="image-box">
+      <img id="img-sol-right" alt="Solution Right Image">
+    </div>
+  </div>
+</div>
+
+<script>
+const IMAGES = {
+  color: {
+    left: 'Nugget_Nature_Colour1.png',
+    right: 'Nugget_Nature_Colour2.png'
+  },
+  grayscale: {
+    left: 'Nugget_Nature_bw1.png',
+    right: 'Nugget_Nature_bw2.png'
+  }
+};
+
+const DIFFERENCES = [
+  { id: 'Beetle',        name: 'Beetle on Log',           xPct: 0.82, yPct: 0.14 },
+  { id: 'YellowMushroom',name: 'Yellow Mushroom (Right)', xPct: 0.93, yPct: 0.35 },
+  { id: 'Acorn',         name: 'Single Acorn',            xPct: 0.58, yPct: 0.54 },
+  { id: 'OakLeaf',       name: 'Oak Leaf on Moss',        xPct: 0.25, yPct: 0.77 },
+  { id: 'MossPatch',     name: 'Moss Patch on Log',       xPct: 0.48, yPct: 0.88 }
+];
+
+let spaceState = 'SETUP';
+let config = { mode: 'color', showTimer: true };
+let startTime = 0;
+let timerInterval = null;
+let foundDifferences = [];
+
+const setupPanel = document.getElementById('setup-panel');
+const gameStage = document.getElementById('game-stage');
+const resultsStage = document.getElementById('results-stage');
+const timerDisplay = document.getElementById('timer-display');
+
+const leftBox = document.getElementById('left-box');
+const targetBox = document.getElementById('target-box');
+const solLeftBox = document.getElementById('sol-left-box');
+const solRightBox = document.getElementById('sol-right-box');
+
+const imgLeft = document.getElementById('img-left');
+const imgRight = document.getElementById('img-right');
+const imgSolLeft = document.getElementById('img-sol-left');
+const imgSolRight = document.getElementById('img-sol-right');
+
+document.getElementById('btn-ready').addEventListener('click', startExperiment);
+document.getElementById('btn-restart').addEventListener('click', resetToSetup);
+document.getElementById('btn-copy-headers').addEventListener('click', (e) => copyDataToClipboard(true, e.target));
+document.getElementById('btn-copy-data').addEventListener('click', (e) => copyDataToClipboard(false, e.target));
+
+window.addEventListener('keydown', (e) => {
+  if ((e.code === 'Space' || e.key === ' ') && spaceState === 'SETUP') {
+    e.preventDefault();
+    startExperiment();
+  }
+});
+
+function startExperiment() {
+  config = {
+    mode: document.getElementById('color-mode').value,
+    showTimer: document.getElementById('show-timer').value === 'true'
+  };
+
+  const currentSet = IMAGES[config.mode];
+
+  imgLeft.onerror = () => alert(`Failed to load: "${currentSet.left}".`);
+  imgRight.onerror = () => alert(`Failed to load: "${currentSet.right}".`);
+
+  imgLeft.src = currentSet.left;
+  imgRight.src = currentSet.right;
+  imgSolLeft.src = currentSet.left;
+  imgSolRight.src = currentSet.right;
+
+  foundDifferences = [];
+  spaceState = 'RUNNING';
+
+  setupPanel.classList.add('hidden');
+  resultsStage.classList.add('hidden');
+  gameStage.classList.remove('hidden');
+
+  if (config.showTimer) {
+    timerDisplay.classList.remove('hidden');
+    timerDisplay.textContent = "00:00.00";
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimerUI, 30);
+  } else {
+    timerDisplay.classList.add('hidden');
+  }
+
+  document.getElementById('found-count').textContent = '0';
+  startTime = performance.now();
+
+  if (imgRight.complete && imgRight.naturalWidth !== 0) {
+    renderHotspots();
+  } else {
+    imgRight.onload = renderHotspots;
+  }
+}
+
+function renderHotspots() {
+  targetBox.querySelectorAll('.target-circle').forEach(el => el.remove());
+  leftBox.querySelectorAll('.target-circle').forEach(el => el.remove());
+
+  DIFFERENCES.forEach((diff) => {
+    const circleRight = document.createElement('div');
+    circleRight.classList.add('target-circle');
+    circleRight.dataset.id = diff.id;
+    circleRight.style.left = `${diff.xPct * 100}%`;
+    circleRight.style.top = `${diff.yPct * 100}%`;
+
+    const circleLeft = document.createElement('div');
+    circleLeft.classList.add('target-circle');
+    circleLeft.dataset.id = diff.id;
+    circleLeft.style.left = `${diff.xPct * 100}%`;
+    circleLeft.style.top = `${diff.yPct * 100}%`;
+
+    circleRight.addEventListener('click', () => onTargetClicked(diff.id, diff));
+    circleLeft.addEventListener('click', () => onTargetClicked(diff.id, diff));
+
+    targetBox.appendChild(circleRight);
+    leftBox.appendChild(circleLeft);
+  });
+}
+
+function onTargetClicked(diffId, diffConfig) {
+  if (spaceState !== 'RUNNING') return;
+
+  const rightCircle = targetBox.querySelector(`.target-circle[data-id="${diffId}"]`);
+  const leftCircle = leftBox.querySelector(`.target-circle[data-id="${diffId}"]`);
+
+  if (!rightCircle || rightCircle.classList.contains('found')) return;
+
+  const clickTime = (performance.now() - startTime) / 1000;
+
+  rightCircle.classList.add('found');
+  if (leftCircle) leftCircle.classList.add('found');
+
+  foundDifferences.push({
+    id: diffConfig.id,
+    name: diffConfig.name,
+    time: clickTime
+  });
+
+  document.getElementById('found-count').textContent = foundDifferences.length;
+
+  if (foundDifferences.length === DIFFERENCES.length) {
+    finishExperiment();
+  }
+}
+
+function updateTimerUI() {
+  const elapsed = (performance.now() - startTime) / 1000;
+  const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+  const secs = Math.floor(elapsed % 60).toString().padStart(2, '0');
+  const millis = Math.floor((elapsed % 1) * 100).toString().padStart(2, '0');
+  timerDisplay.textContent = `${mins}:${secs}.${millis}`;
+}
+
+function finishExperiment() {
+  clearInterval(timerInterval);
+  spaceState = 'FINISHED';
+
+  const maxTotalTime = Math.max(...foundDifferences.map(d => d.time));
+
+  gameStage.classList.add('hidden');
+  resultsStage.classList.remove('hidden');
+
+  document.getElementById('total-time-text').textContent = maxTotalTime.toFixed(2);
+
+  buildResultsTable(maxTotalTime);
+  renderSolutionOverlay();
+}
+
+function buildResultsTable(totalTime) {
+  const container = document.getElementById('results-table-container');
+
+  let rowsHtml = DIFFERENCES.map(d => {
+    const record = foundDifferences.find(f => f.id === d.id);
+    return `
+      <tr>
+        <td>${d.name}</td>
+        <td>${record ? record.time.toFixed(2) + 's' : 'N/A'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Difference Item</th>
+          <th>Time to Find (seconds)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td style="font-weight: bold;">Timer Displayed</td>
+          <td style="font-weight: bold;">${config.showTimer ? 'Yes' : 'No'}</td>
+        </tr>
+        <tr style="font-weight: bold; background-color: #eee;">
+          <td>Total Time (All Found)</td>
+          <td>${totalTime.toFixed(2)}s</td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+}
+
+function renderSolutionOverlay() {
+  solLeftBox.querySelectorAll('.target-circle').forEach(el => el.remove());
+  solRightBox.querySelectorAll('.target-circle').forEach(el => el.remove());
+
+  DIFFERENCES.forEach((diff) => {
+    const circleLeft = document.createElement('div');
+    circleLeft.classList.add('target-circle', 'solution-marker');
+    circleLeft.style.left = `${diff.xPct * 100}%`;
+    circleLeft.style.top = `${diff.yPct * 100}%`;
+    solLeftBox.appendChild(circleLeft);
+
+    const circleRight = document.createElement('div');
+    circleRight.classList.add('target-circle', 'solution-marker');
+    circleRight.style.left = `${diff.xPct * 100}%`;
+    circleRight.style.top = `${diff.yPct * 100}%`;
+    solRightBox.appendChild(circleRight);
+  });
+}
+
+function copyDataToClipboard(includeHeaders, buttonEl) {
+  const maxTotalTime = Math.max(...foundDifferences.map(d => d.time));
+
+  let headers = ['Mode', 'Timer_Displayed'];
+  let values = [config.mode, config.showTimer ? 'Yes' : 'No'];
+
+  DIFFERENCES.forEach(d => {
+    const record = foundDifferences.find(f => f.id === d.id);
+    headers.push(`${d.id}_Time_s`);
+    values.push(record ? record.time.toFixed(2) : '');
+  });
+
+  headers.push('Total_Time_s');
+  values.push(maxTotalTime.toFixed(2));
+
+  let tsvString = includeHeaders ? `${headers.join('\t')}\n${values.join('\t')}` : values.join('\t');
+
+  navigator.clipboard.writeText(tsvString).then(() => {
+    const label = buttonEl.textContent;
+    buttonEl.textContent = 'Copied!';
+    setTimeout(() => { buttonEl.textContent = label; }, 1500);
+  }).catch(() => {
+    alert('Failed to copy data.');
+  });
+}
+
+function resetToSetup() {
+  spaceState = 'SETUP';
+  resultsStage.classList.add('hidden');
+  gameStage.classList.add('hidden');
+  setupPanel.classList.remove('hidden');
+}
+</script>
+</body>
+</html>
